@@ -3,8 +3,13 @@ package cn.yongye.androbox;
 import android.app.Application;
 import android.content.Context;
 
+import java.io.File;
+
 import cn.yongye.androbox.pm.LoadedApk;
+import cn.yongye.androbox.pm.parser.PackageParserEx;
+import cn.yongye.androbox.pm.parser.VPackage;
 import me.weishu.reflection.Reflection;
+import mirror.android.content.pm.PackageParser;
 
 public class MyApp extends Application {
 
@@ -19,8 +24,11 @@ public class MyApp extends Application {
         super.attachBaseContext(base);
         mApp = this;
         Reflection.unseal(base);
-
-
+        try {
+            VirtualCore.get().startup(mApp);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -28,17 +36,29 @@ public class MyApp extends Application {
         super.onCreate();
 
         /**
-         * 1. 安装虚拟应用。 apk-》loadedApk
+         * 1. 安装虚拟应用。
+         *  a. parse apk
+         *  b.
          * 2. 创建虚拟应用进程，创建虚拟应用的Applicaiton。
          * 3. 怎么启动虚拟应用的Activity。
          */
         try {
+            //dump virtual app file
+            File file = new File(String.format("%s/helloworld.apk",
+                    MyApp.getInstance().getFilesDir().getAbsolutePath()));
+            if(!file.exists())
+                FileUtils.dumpFile("helloworld.apk", file.getAbsolutePath());
+            //1. install apk
+            //1.a parse apk to Package
+            VPackage vPackage = PackageParserEx.parsePackage(file);
             //1. apk to LoadedApk objection
             Object loadedApk = LoadedApk.getInstance(mApp).makeLoadedApk();
             //2. make virtual application
-            VirtualCore.getInstance(mApp).makeVApplication(loadedApk);
+            VirtualCore.get().makeVApplication(loadedApk);
         } catch (Exception e) {
             e.printStackTrace();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
         }
     }
 }

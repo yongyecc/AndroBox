@@ -44,7 +44,8 @@ public class LoadedApk {
     public Object makeLoadedApk() throws Exception {
         File file = new File(String.format("%s/helloworld.apk",
                 MyApp.getInstance().getFilesDir().getAbsolutePath()));
-        FileUtils.dumpFile("helloworld.apk", file.getAbsolutePath());
+        if(!file.exists())
+            FileUtils.dumpFile("helloworld.apk", file.getAbsolutePath());
         //获取 ActivityThread 类
         Class<?> mActivityThreadClass = Class.forName("android.app.ActivityThread");
         //获取 ActivityThread 的 currentActivityThread() 方法

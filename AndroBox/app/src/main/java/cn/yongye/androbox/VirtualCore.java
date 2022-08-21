@@ -3,7 +3,10 @@ package cn.yongye.androbox;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.content.Context;
-
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Process;
 import java.util.List;
 import java.util.Map;
 
@@ -14,22 +17,23 @@ public class VirtualCore {
 
     private Context context;
     private static VirtualCore instance;
+    private PackageInfo hostPkgInfo;
 
-    private VirtualCore(Context context) {
-        this.context = context;
+    private static VirtualCore gCore = new VirtualCore();
+    private final int myUid = Process.myUid();
+
+
+    public static VirtualCore get() {
+        return gCore;
     }
 
-    public static VirtualCore getInstance(Context context) {
-        if (instance == null) {
-            synchronized (VirtualCore.class) {
-                if (instance == null) {
-                    instance = new VirtualCore(context);
-                }
-            }
-        }
-        return instance;
+    public void startup(Context context) throws Throwable {
+        hostPkgInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
     }
 
+    public int[] getGids() {
+        return hostPkgInfo.gids;
+    }
 
     public void makeVApplication(Object loadedApk){
         String stActivityThread = "android.app.ActivityThread";
@@ -50,6 +54,9 @@ public class VirtualCore {
         mAllApplications.remove(mInitApplication);
         //LoadedApk.ApplicationInfo.classname=
 //        ((ApplicationInfo) RefInvoke.getFieldObject(stClassLoadedApk, loadedApkInfo, "mApplicationInfo")).className = "";
+        //make packageInfo for apk
+
+
         //call LoadedApk.makeApplication, make Applicaiton object
         Application application = (Application) RefInvoke.invokeMethod(stClassLoadedApk,
                 "makeApplication", loadedApkInfo, new Class[]{boolean.class, Instrumentation.class}, new Object[]{false, null});
