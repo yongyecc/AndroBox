@@ -21,6 +21,7 @@ public class VirtualCore {
 
     private static VirtualCore gCore = new VirtualCore();
     private final int myUid = Process.myUid();
+
     /**
      * Client Package Manager
      */
@@ -43,6 +44,7 @@ public class VirtualCore {
     public PackageManager getUnHookPackageManager() {
         return unHookPackageManager;
     }
+
 
     public int[] getGids() {
         return hostPkgInfo.gids;
