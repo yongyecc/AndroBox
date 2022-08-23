@@ -52,7 +52,7 @@ public class MyApp extends Application {
             //1. install apk
             //1.a parse apk to Package
             VAppManagerService.get().installPackage(file.getAbsolutePath(), 1, true);
-            VPackage vPackage = PackageCacheManager.get();
+            VPackage vPackage = PackageCacheManager.get("cn.yongye.helloworld");
             //1. apk to LoadedApk objection
             Object loadedApk = LoadedApk.getInstance(mApp).makeLoadedApk();
             //2. make virtual application

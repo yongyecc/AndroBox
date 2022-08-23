@@ -9,7 +9,7 @@ import cn.yongye.androbox.os.VEnvironment;
 import cn.yongye.androbox.pm.parser.PackageParserEx;
 import cn.yongye.androbox.pm.parser.VPackage;
 
-public class VAppManagerService {
+    public class VAppManagerService {
 
     private static final String TAG = VAppManagerService.class.getSimpleName();
     private static final AtomicReference<VAppManagerService> sService = new AtomicReference<>();
