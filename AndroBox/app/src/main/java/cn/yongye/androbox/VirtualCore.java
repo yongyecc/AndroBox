@@ -6,12 +6,20 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.IBinder;
 import android.os.Process;
+import android.os.RemoteException;
+
 import java.util.List;
 import java.util.Map;
 
+import cn.yongye.androbox.client.core.InvocationStubManager;
+import cn.yongye.androbox.client.ipc.ServiceManagerNative;
+import cn.yongye.androbox.helper.ipcbus.IPCBus;
+import cn.yongye.androbox.helper.ipcbus.IServerCache;
 import cn.yongye.androbox.pm.LoadedApk;
 import cn.yongye.androbox.reflect.RefInvoke;
+import cn.yongye.androbox.virtual.service.ServiceCache;
 
 public class VirtualCore {
 
@@ -26,9 +34,17 @@ public class VirtualCore {
      * Client Package Manager
      */
     private PackageManager unHookPackageManager;
+    /**
+     * Host package name
+     */
+    private String hostPkgName;
 
     public static VirtualCore get() {
         return gCore;
+    }
+
+    public String getHostPkg() {
+        return hostPkgName;
     }
 
     public Context getContext() {
@@ -39,6 +55,47 @@ public class VirtualCore {
         this.context = context;
         unHookPackageManager = context.getPackageManager();
         hostPkgInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
+
+        detectProcessType();
+
+        IPCBus.initialize(new IServerCache() {
+            @Override
+            public void join(String serverName, IBinder binder) {
+                ServiceCache.addService(serverName, binder);
+            }
+
+            @Override
+            public IBinder query(String serverName) {
+                return ServiceManagerNative.getService(serverName);
+            }
+        });
+
+        InvocationStubManager invocationStubManager = InvocationStubManager.getInstance();
+        //Create proxy object for system services and save them to map.
+        invocationStubManager.init();
+        //The realization process of dynamic proxy
+        invocationStubManager.injectAll();
+    }
+
+    private void detectProcessType() {
+        // Host package name
+        hostPkgName = context.getApplicationInfo().packageName;
+//        // Main process name
+//        mainProcessName = context.getApplicationInfo().processName;
+//        // Current process name
+//        processName = ActivityThread.getProcessName.call(mainThread);
+//        if (processName.equals(mainProcessName)) {
+//            processType = ProcessType.Main;
+//        } else if (processName.endsWith(Constants.SERVER_PROCESS_NAME)) {
+//            processType = ProcessType.Server;
+//        } else if (VActivityManager.get().isAppProcess(processName)) {
+//            processType = ProcessType.VAppClient;
+//        } else {
+//            processType = ProcessType.CHILD;
+//        }
+//        if (isVAppProcess()) {
+//            systemPid = VActivityManager.get().getSystemPid();
+//        }
     }
 
     public PackageManager getUnHookPackageManager() {
@@ -74,6 +131,7 @@ public class VirtualCore {
 
         //call LoadedApk.makeApplication, make Applicaiton object
         //dynamic proxy PackageManager, genarate packageInfo
+
         Application application = (Application) RefInvoke.invokeMethod(stClassLoadedApk,
                 "makeApplication", loadedApkInfo, new Class[]{boolean.class, Instrumentation.class}, new Object[]{false, null});
         //ActivityThread.Applition = LoadedApk.Applicaiton
@@ -88,4 +146,7 @@ public class VirtualCore {
         }
         application.onCreate();
     }
+
+
+
 }
