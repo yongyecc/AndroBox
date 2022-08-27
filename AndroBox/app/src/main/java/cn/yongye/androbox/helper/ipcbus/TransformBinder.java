@@ -25,6 +25,7 @@ public class TransformBinder extends Binder {
         IPCMethod method = serverInterface.getIPCMethod(code);
         if (method != null) {
             try {
+                //server is virtual system service
                 method.handleTransact(server, data, reply);
             } catch (Throwable e) {
                 e.printStackTrace();

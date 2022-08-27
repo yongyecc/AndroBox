@@ -3,6 +3,7 @@ package cn.yongye.androbox.client.core;
 import java.util.HashMap;
 import java.util.Map;
 
+import cn.yongye.androbox.client.hook.delegate.AppInstrumentation;
 import cn.yongye.androbox.client.hook.proxies.pm.PackageManagerStub;
 import cn.yongye.androbox.interfaces.IInjector;
 
@@ -24,8 +25,8 @@ public final class InvocationStubManager {
         for (IInjector injector : mInjectors.values()) {
             injector.inject();
         }
-        // XXX: Lazy inject the Instrumentation,
-//        addInjector(AppInstrumentation.getDefault());
+//         XXX: Lazy inject the Instrumentation,
+        addInjector(AppInstrumentation.getDefault());
     }
 
     /**

@@ -9,26 +9,35 @@ import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
+import android.util.Log;
 
 import java.util.List;
 import java.util.Map;
 
 import cn.yongye.androbox.client.core.InvocationStubManager;
+import cn.yongye.androbox.client.hook.delegate.AppInstrumentation;
 import cn.yongye.androbox.client.ipc.ServiceManagerNative;
 import cn.yongye.androbox.helper.ipcbus.IPCBus;
 import cn.yongye.androbox.helper.ipcbus.IServerCache;
 import cn.yongye.androbox.pm.LoadedApk;
 import cn.yongye.androbox.reflect.RefInvoke;
 import cn.yongye.androbox.virtual.service.ServiceCache;
+import mirror.android.app.ActivityThread;
 
 public class VirtualCore {
+
+    public String TAG = this.getClass().getSimpleName();
 
     private Context context;
     private static VirtualCore instance;
     private PackageInfo hostPkgInfo;
-
+    /**
+     * ActivityThread instance
+     */
+    private Object mainThread;
     private static VirtualCore gCore = new VirtualCore();
     private final int myUid = Process.myUid();
+    private boolean isStartUp;
 
     /**
      * Client Package Manager
@@ -51,11 +60,19 @@ public class VirtualCore {
         return context;
     }
 
+    public boolean isStartup() {
+        return isStartUp;
+    }
+
+    public static Object mainThread() {
+        return get().mainThread;
+    }
+
     public void startup(Context context) throws Throwable {
         this.context = context;
         unHookPackageManager = context.getPackageManager();
         hostPkgInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
-
+        mainThread = ActivityThread.currentActivityThread.call();
         detectProcessType();
 
         IPCBus.initialize(new IServerCache() {
@@ -69,6 +86,8 @@ public class VirtualCore {
                 return ServiceManagerNative.getService(serverName);
             }
         });
+
+        isStartUp = true;
 
         InvocationStubManager invocationStubManager = InvocationStubManager.getInstance();
         //Create proxy object for system services and save them to map.
@@ -131,7 +150,6 @@ public class VirtualCore {
 
         //call LoadedApk.makeApplication, make Applicaiton object
         //dynamic proxy PackageManager, genarate packageInfo
-
         Application application = (Application) RefInvoke.invokeMethod(stClassLoadedApk,
                 "makeApplication", loadedApkInfo, new Class[]{boolean.class, Instrumentation.class}, new Object[]{false, null});
         //ActivityThread.Applition = LoadedApk.Applicaiton
@@ -144,7 +162,10 @@ public class VirtualCore {
             Object mLocalProvider = RefInvoke.getFieldObject(stActivityThread+"$ProviderClientRecord", providerClientRecord, "mLocalProvider");
             RefInvoke.setFieldObject("android.content.ContentProvider", "mContext", mLocalProvider, application);
         }
+        Instrumentation mInstrumentation = AppInstrumentation.getDefault();
+        mInstrumentation.callApplicationOnCreate(application);
         application.onCreate();
+        Log.d(TAG, "makeVApplication end.");
     }
 
 

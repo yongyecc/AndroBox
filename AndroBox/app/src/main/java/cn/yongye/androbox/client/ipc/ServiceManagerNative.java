@@ -8,6 +8,8 @@ import android.os.RemoteException;
 import androidx.core.app.BundleCompat;
 
 import cn.yongye.androbox.VirtualCore;
+import cn.yongye.androbox.helper.utils.VLog;
+import cn.yongye.androbox.virtual.service.IServiceFetcher;
 import cn.yongye.androbox.virtual.service.ServiceCache;
 
 public class ServiceManagerNative {
@@ -67,9 +69,9 @@ public class ServiceManagerNative {
     }
 
     public static IBinder getService(String name) {
-        if (VirtualCore.get().isServerProcess()) {
-            return ServiceCache.getService(name);
-        }
+//        if (VirtualCore.get().isServerProcess()) {
+//            return ServiceCache.getService(name);
+//        }
         IServiceFetcher fetcher = getServiceFetcher();
         if (fetcher != null) {
             try {

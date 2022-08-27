@@ -20,14 +20,19 @@ public class IPCBus {
 
     public static void register(Class<?> interfaceClass, Object server) {
         checkInitialized();
+        //make interface method to IPCMethod of virtual service
         ServerInterface serverInterface = new ServerInterface(interfaceClass);
+        //create binder object,
         TransformBinder binder = new TransformBinder(serverInterface, server);
+        //save binder of virtual system service
         sCache.join(serverInterface.getInterfaceName(), binder);
     }
 
     public static <T> T get(Class<?> interfaceClass) {
         checkInitialized();
+        //make interface method to IPCMethod of virtual service
         ServerInterface serverInterface = new ServerInterface(interfaceClass);
+        //get binder object
         IBinder binder = sCache.query(serverInterface.getInterfaceName());
         if (binder == null) {
             return null;

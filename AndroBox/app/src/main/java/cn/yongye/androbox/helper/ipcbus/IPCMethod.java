@@ -62,6 +62,7 @@ public class IPCMethod {
             }
         }
         try {
+            //call method of virutal system service
             Object res = method.invoke(server, parameters);
             reply.writeNoException();
             reply.writeValue(res);
