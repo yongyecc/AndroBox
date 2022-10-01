@@ -66,6 +66,7 @@ public class MethodInvocationStub<T> {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             //该方法是否是否在需要hook的方法列表中。
+            VLog.i(TAG, String.format("[Method][Called] %s", method));
             MethodProxy methodProxy = getMethodProxy(method.getName());
             boolean useProxy = (methodProxy != null && methodProxy.isEnable());
             boolean mightLog = (mInvocationLoggingCondition != LogInvocation.Condition.NEVER) ||

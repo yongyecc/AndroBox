@@ -15,9 +15,12 @@ import androidx.core.app.BundleCompat;
 
 import cn.yongye.androbox.VirtualCore;
 import cn.yongye.androbox.helper.ipcbus.IPCBus;
+import cn.yongye.androbox.virtual.server.am.BroadcastSystem;
 import cn.yongye.androbox.virtual.server.am.VActivityManagerService;
 import cn.yongye.androbox.virtual.server.interfaces.IActivityManager;
+import cn.yongye.androbox.virtual.server.interfaces.IAppManager;
 import cn.yongye.androbox.virtual.server.interfaces.IPackageManager;
+import cn.yongye.androbox.virtual.server.pm.VAppManagerService;
 import cn.yongye.androbox.virtual.server.pm.VPackageManagerService;
 
 public final class BinderProvider extends ContentProvider {
@@ -37,6 +40,9 @@ public final class BinderProvider extends ContentProvider {
         IPCBus.register(IPackageManager.class, VPackageManagerService.get());
         VActivityManagerService.systemReady(context);
         IPCBus.register(IActivityManager.class, VActivityManagerService.get());
+        VAppManagerService.systemReady();
+        IPCBus.register(IAppManager.class, VAppManagerService.get());
+        BroadcastSystem.attach(VActivityManagerService.get(), VAppManagerService.get());
         return true;
     }
 

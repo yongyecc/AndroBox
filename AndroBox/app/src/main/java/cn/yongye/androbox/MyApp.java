@@ -9,6 +9,7 @@ import cn.yongye.androbox.client.VClientImpl;
 import cn.yongye.androbox.client.env.VirtualRuntime;
 import cn.yongye.androbox.pm.LoadedApk;
 import cn.yongye.androbox.pm.parser.VPackage;
+import cn.yongye.androbox.virtual.server.am.BroadcastSystem;
 import cn.yongye.androbox.virtual.server.pm.PackageCacheManager;
 import cn.yongye.androbox.virtual.server.pm.VAppManagerService;
 import me.weishu.reflection.Reflection;
@@ -55,8 +56,8 @@ public class MyApp extends Application {
             VPackage vPackage = PackageCacheManager.get("cn.yongye.helloworld");
             //1. apk to LoadedApk objection
             Object loadedApk = LoadedApk.getInstance(mApp).makeLoadedApk();
-            //2. make virtual application
-//            VClientImpl.get().makeVApplication(mApp, loadedApk);
+            //
+            BroadcastSystem.get().startApp(vPackage);
         } catch (Exception e) {
             e.printStackTrace();
         } catch (Throwable throwable) {

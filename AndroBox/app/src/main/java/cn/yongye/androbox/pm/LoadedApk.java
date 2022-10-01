@@ -14,6 +14,8 @@ import java.lang.reflect.Method;
 import cn.yongye.androbox.FileUtils;
 import cn.yongye.androbox.MyApp;
 import cn.yongye.androbox.Utils;
+import cn.yongye.androbox.VirtualCore;
+import cn.yongye.androbox.client.VClientImpl;
 import cn.yongye.androbox.client.env.VirtualRuntime;
 import dalvik.system.DexClassLoader;
 

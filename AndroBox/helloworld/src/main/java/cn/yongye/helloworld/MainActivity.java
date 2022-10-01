@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
                     case 1:
                         intent.setAction("cn.yongye.helloworld.selfrecevier");
                         intent.putExtra("msg", "这是一个广播消息。");
-                        mContext.sendBroadcast(intent);
+                        MainActivity.this.sendBroadcast(intent);
                         break;
                 }
             }

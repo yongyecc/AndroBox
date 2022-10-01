@@ -41,7 +41,7 @@ public final class VClientImpl extends IVClient.Stub {
     private static final String TAG = VClientImpl.class.getSimpleName();
     @SuppressLint("StaticFieldLeak")
     private static final VClientImpl gClient = new VClientImpl();
-//    private final H mH = new H();
+    private final H mH = new H();
     private ConditionVariable mTempLock;
     private Instrumentation mInstrumentation = AppInstrumentation.getDefault();
     private IBinder token;
@@ -60,12 +60,29 @@ public final class VClientImpl extends IVClient.Stub {
         this.vuid = vuid;
     }
 
+    private void sendMessage(int what, Object obj) {
+        Message msg = Message.obtain();
+        msg.what = what;
+        msg.obj = obj;
+        mH.sendMessage(msg);
+    }
+
+    @Override
+    public void scheduleReceiver(String processName, ComponentName component, Intent intent, PendingResultData resultData) {
+        ReceiverData receiverData = new ReceiverData();
+        receiverData.resultData = resultData;
+        receiverData.intent = intent;
+        receiverData.component = component;
+        receiverData.processName = processName;
+        sendMessage(RECEIVER, receiverData);
+    }
+
     public ClassLoader getClassLoader(ApplicationInfo appInfo) {
         Context context = createPackageContext(appInfo.packageName);
         return context.getClassLoader();
     }
 
-    private Context createPackageContext(String packageName) {
+    public Context createPackageContext(String packageName) {
         try {
             Context hostContext = VirtualCore.get().getContext();
             return hostContext.createPackageContext(packageName, Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
@@ -124,10 +141,6 @@ public final class VClientImpl extends IVClient.Stub {
         Log.d(TAG, "makeVApplication end.");
     }
 
-    @Override
-    public void scheduleReceiver(String processName, ComponentName component, Intent intent, PendingResultData resultData) throws RemoteException {
-
-    }
 
     @Override
     public void scheduleNewIntent(String creator, IBinder token, Intent intent) throws RemoteException {
@@ -184,6 +197,34 @@ public final class VClientImpl extends IVClient.Stub {
         String processName;
     }
 
+    private void handleReceiver(ReceiverData data) {
+        BroadcastReceiver.PendingResult result = data.resultData.build();
+        try {
+            if (!isBound()) {
+                bindApplication(data.component.getPackageName(), data.processName);
+            }
+            Context context = mInitialApplication.getBaseContext();
+            Context receiverContext = ContextImpl.getReceiverRestrictedContext.call(context);
+            String className = data.component.getClassName();
+            BroadcastReceiver receiver = (BroadcastReceiver) context.getClassLoader().loadClass(className).newInstance();
+            mirror.android.content.BroadcastReceiver.setPendingResult.call(receiver, result);
+            data.intent.setExtrasClassLoader(context.getClassLoader());
+            if (data.intent.getComponent() == null) {
+                data.intent.setComponent(data.component);
+            }
+            receiver.onReceive(receiverContext, data.intent);
+            if (mirror.android.content.BroadcastReceiver.getPendingResult.call(receiver) != null) {
+                result.finish();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(
+                    "Unable to start receiver " + data.component
+                            + ": " + e.toString(), e);
+        }
+        VActivityManager.get().broadcastFinish(data.resultData);
+    }
+
     public boolean isBound() {
         return mBoundApplication != null;
     }
@@ -233,9 +274,9 @@ public final class VClientImpl extends IVClient.Stub {
         private void handleReceiver(ReceiverData data) {
             BroadcastReceiver.PendingResult result = data.resultData.build();
             try {
-//                if (!isBound()) {
-//                    bindApplication(data.component.getPackageName(), data.processName);
-//                }
+                if (!isBound()) {
+                    bindApplication(data.component.getPackageName(), data.processName);
+                }
                 Context context = mInitialApplication.getBaseContext();
                 Context receiverContext = ContextImpl.getReceiverRestrictedContext.call(context);
                 String className = data.component.getClassName();
@@ -320,5 +361,27 @@ public final class VClientImpl extends IVClient.Stub {
         mInstrumentation.callApplicationOnCreate(application);
         application.onCreate();
         Log.d(TAG, "makeVApplication end.");
+    }
+
+    private void handleNewIntent(NewIntentData data) {
+        Intent intent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            intent = ReferrerIntent.ctor.newInstance(data.intent, data.creator);
+        } else {
+            intent = data.intent;
+        }
+        if (ActivityThread.performNewIntents != null) {
+            ActivityThread.performNewIntents.call(
+                    VirtualCore.mainThread(),
+                    data.token,
+                    Collections.singletonList(intent)
+            );
+        } else {
+//            ActivityThreadNMR1.performNewIntents.call(
+//                    VirtualCore.mainThread(),
+//                    data.token,
+//                    Collections.singletonList(intent),
+//                    true);
+        }
     }
 }

@@ -40,6 +40,7 @@ import cn.yongye.androbox.helper.compat.IApplicationThreadCompat;
 import cn.yongye.androbox.helper.utils.ComponentUtils;
 import cn.yongye.androbox.helper.utils.VLog;
 import cn.yongye.androbox.os.VUserHandle;
+import cn.yongye.androbox.remote.BadgerInfo;
 import cn.yongye.androbox.remote.PendingResultData;
 import cn.yongye.androbox.virtual.server.interfaces.IActivityManager;
 import cn.yongye.androbox.virtual.server.pm.PackageCacheManager;
@@ -475,5 +476,19 @@ public class VActivityManagerService implements IActivityManager {
             }
         }
         return null;
+    }
+
+    @Override
+    public void addPendingIntent(IBinder binder, String creator) {
+        mPendingIntents.addPendingIntent(binder, creator);
+    }
+
+    @Override
+    public void notifyBadgerChange(BadgerInfo info) {
+        Intent intent = new Intent(VASettings.ACTION_BADGER_CHANGE);
+        intent.putExtra("userId", info.userId);
+        intent.putExtra("packageName", info.packageName);
+        intent.putExtra("badgerCount", info.badgerCount);
+        VirtualCore.get().getContext().sendBroadcast(intent);
     }
 }

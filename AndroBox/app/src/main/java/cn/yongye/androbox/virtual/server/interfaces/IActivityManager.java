@@ -4,6 +4,7 @@ import android.content.*;
 import android.content.pm.*;
 import android.os.*;
 
+import cn.yongye.androbox.remote.BadgerInfo;
 import cn.yongye.androbox.remote.PendingResultData;
 
 public interface IActivityManager {
@@ -20,4 +21,8 @@ public interface IActivityManager {
     void processRestarted(String packageName, String processName, int userId) throws RemoteException;
 
     void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags) throws RemoteException;
+
+    void notifyBadgerChange(BadgerInfo info) throws RemoteException;
+
+    void addPendingIntent(IBinder binder, String packageName) throws RemoteException;
 }

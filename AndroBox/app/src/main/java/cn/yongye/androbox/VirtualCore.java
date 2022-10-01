@@ -25,6 +25,7 @@ import cn.yongye.androbox.client.core.InvocationStubManager;
 import cn.yongye.androbox.client.env.Constants;
 import cn.yongye.androbox.client.env.VirtualRuntime;
 import cn.yongye.androbox.client.hook.delegate.AppInstrumentation;
+import cn.yongye.androbox.client.hook.delegate.ComponentDelegate;
 import cn.yongye.androbox.client.ipc.ServiceManagerNative;
 import cn.yongye.androbox.client.ipc.VActivityManager;
 import cn.yongye.androbox.client.ipc.VPackageManager;
@@ -70,6 +71,9 @@ public class VirtualCore {
      */
     private String mainProcessName;
     private int systemPid;
+    private ComponentDelegate componentDelegate;
+
+
     public static VirtualCore get() {
         return gCore;
     }
@@ -80,6 +84,10 @@ public class VirtualCore {
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
+    }
+
+    public ComponentDelegate getComponentDelegate() {
+        return componentDelegate == null ? ComponentDelegate.EMPTY : componentDelegate;
     }
 
     /**
@@ -108,7 +116,16 @@ public class VirtualCore {
      * @return If the current process is used to VA.
      */
     public boolean isVAppProcess() {
-        return ProcessType.VAppClient == processType;
+//        return ProcessType.VAppClient == processType;
+        return true;
+    }
+
+    public static PackageManager getPM() {
+        return get().getPackageManager();
+    }
+
+    public PackageManager getPackageManager() {
+        return context.getPackageManager();
     }
 
     public ConditionVariable getInitLock() {

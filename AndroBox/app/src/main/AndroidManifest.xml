@@ -70,6 +70,9 @@
             android:authorities="virtual_stub_2"
             android:exported="false"
             />
+        <receiver
+            android:name=".client.stub.StubPendingReceiver"/>
+<!--            android:process="@string/engine_process_name" />-->
     </application>
 
 </manifest>

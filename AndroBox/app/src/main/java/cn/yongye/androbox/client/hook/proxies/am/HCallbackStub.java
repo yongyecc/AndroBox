@@ -27,6 +27,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
 
     private static final int API_LEVEL = Build.VERSION.SDK_INT;
     private static int LAUNCH_ACTIVITY;
+    private static int RECEIVER;
     private static final int CREATE_SERVICE = ActivityThread.H.CREATE_SERVICE.get();
     private static final int SCHEDULE_CRASH =
             ActivityThread.H.SCHEDULE_CRASH != null ? ActivityThread.H.SCHEDULE_CRASH.get() : -1;
@@ -41,6 +42,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
             EXECUTE_TRANSACTION = ActivityThread.HP.EXECUTE_TRANSACTION.get();
         } else {
             LAUNCH_ACTIVITY = ActivityThread.H.LAUNCH_ACTIVITY.get();
+            RECEIVER = ActivityThread.H.RECEIVER.get();
         }
     }
 
@@ -142,6 +144,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
         ActivityThread.ActivityClientRecord.activityInfo.set(r, info);
         return true;
     }
+
 
     @Override
     public void inject() throws Throwable {

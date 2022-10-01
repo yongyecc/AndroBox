@@ -18,6 +18,7 @@ import cn.yongye.androbox.client.env.VirtualRuntime;
 import cn.yongye.androbox.helper.compat.ActivityManagerCompat;
 import cn.yongye.androbox.helper.ipcbus.IPCSingleton;
 import cn.yongye.androbox.os.VUserHandle;
+import cn.yongye.androbox.remote.BadgerInfo;
 import cn.yongye.androbox.remote.PendingResultData;
 import cn.yongye.androbox.virtual.server.interfaces.IActivityManager;
 import mirror.android.app.ActivityThread;
@@ -30,6 +31,10 @@ public class VActivityManager {
 
     public static VActivityManager get() {
         return sAM;
+    }
+
+    public void addPendingIntent(IBinder binder, String creator) throws RemoteException {
+        getService().addPendingIntent(binder, creator);
     }
 
     public void sendActivityResult(IBinder resultTo, String resultWho, int requestCode) {
@@ -95,6 +100,14 @@ public class VActivityManager {
     public ActivityClientRecord getActivityRecord(IBinder token) {
         synchronized (mActivities) {
             return token == null ? null : mActivities.get(token);
+        }
+    }
+
+    public void notifyBadgerChange(BadgerInfo info) {
+        try {
+            getService().notifyBadgerChange(info);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
         }
     }
 

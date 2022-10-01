@@ -5,13 +5,19 @@ import static cn.yongye.androbox.client.stub.VASettings.INTERCEPT_BACK_HOME;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ComponentInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.IInterface;
 import android.os.RemoteException;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.TypedValue;
 
@@ -24,13 +30,19 @@ import java.lang.reflect.Method;
 
 import cn.yongye.androbox.FileUtils;
 import cn.yongye.androbox.VirtualCore;
+import cn.yongye.androbox.client.badger.BadgerManager;
 import cn.yongye.androbox.client.env.Constants;
 import cn.yongye.androbox.client.hook.base.MethodProxy;
 import cn.yongye.androbox.client.ipc.ActivityClientRecord;
 import cn.yongye.androbox.client.ipc.VActivityManager;
 import cn.yongye.androbox.client.stub.ChooserActivity;
+import cn.yongye.androbox.client.stub.StubPendingActivity;
+import cn.yongye.androbox.client.stub.StubPendingReceiver;
+import cn.yongye.androbox.client.stub.StubPendingService;
+import cn.yongye.androbox.client.stub.VASettings;
 import cn.yongye.androbox.helper.compat.ActivityManagerCompat;
 import cn.yongye.androbox.helper.utils.ArrayUtils;
+import cn.yongye.androbox.helper.utils.BitmapUtils;
 import cn.yongye.androbox.helper.utils.ComponentUtils;
 import cn.yongye.androbox.helper.utils.VLog;
 import cn.yongye.androbox.os.VUserHandle;
@@ -225,5 +237,200 @@ public class MethodProxies {
             return false;
         }
 
+    }
+
+    static class BroadcastIntent extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "broadcastIntent";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            Intent intent = (Intent) args[1];
+            String type = (String) args[2];
+            intent.setDataAndType(intent.getData(), type);
+            if (VirtualCore.get().getComponentDelegate() != null) {
+                VirtualCore.get().getComponentDelegate().onSendBroadcast(intent);
+            }
+            Intent newIntent = handleIntent(intent);
+            if (newIntent != null) {
+                args[1] = newIntent;
+            } else {
+                return 0;
+            }
+
+            if (args[7] instanceof String || args[7] instanceof String[]) {
+                // clear the permission
+                args[7] = null;
+            }
+//            ((Intent) args[1]).setComponent(new ComponentName("cn.yongye.androbox",
+//                    "cn.yongye.androbox.client.stub.StubPendingReceiver"));
+            return method.invoke(who, args);
+        }
+
+
+        private Intent handleIntent(final Intent intent) {
+            final String action = intent.getAction();
+            if ("android.intent.action.CREATE_SHORTCUT".equals(action)
+                    || "com.android.launcher.action.INSTALL_SHORTCUT".equals(action)) {
+
+                return VASettings.ENABLE_INNER_SHORTCUT ? handleInstallShortcutIntent(intent) : null;
+
+            } else if ("com.android.launcher.action.UNINSTALL_SHORTCUT".equals(action)) {
+
+                handleUninstallShortcutIntent(intent);
+
+            } else if (BadgerManager.handleBadger(intent)) {
+                return null;
+            } else {
+                return ComponentUtils.redirectBroadcastIntent(intent, VUserHandle.myUserId());
+            }
+            return intent;
+        }
+
+        private Intent handleInstallShortcutIntent(Intent intent) {
+            Intent shortcut = intent.getParcelableExtra(Intent.EXTRA_SHORTCUT_INTENT);
+            if (shortcut != null) {
+                ComponentName component = shortcut.resolveActivity(VirtualCore.getPM());
+                if (component != null) {
+                    String pkg = component.getPackageName();
+                    Intent newShortcutIntent = new Intent();
+                    newShortcutIntent.setClassName(getHostPkg(), Constants.SHORTCUT_PROXY_ACTIVITY_NAME);
+                    newShortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);
+                    newShortcutIntent.putExtra("_VA_|_intent_", shortcut);
+                    newShortcutIntent.putExtra("_VA_|_uri_", shortcut.toUri(0));
+                    newShortcutIntent.putExtra("_VA_|_user_id_", VUserHandle.myUserId());
+                    intent.removeExtra(Intent.EXTRA_SHORTCUT_INTENT);
+                    intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, newShortcutIntent);
+
+                    Intent.ShortcutIconResource icon = intent.getParcelableExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE);
+                    if (icon != null && !TextUtils.equals(icon.packageName, getHostPkg())) {
+                        try {
+                            Resources resources = VirtualCore.get().getResources(pkg);
+                            int resId = resources.getIdentifier(icon.resourceName, "drawable", pkg);
+                            if (resId > 0) {
+                                //noinspection deprecation
+                                Drawable iconDrawable = resources.getDrawable(resId);
+                                Bitmap newIcon = BitmapUtils.drawableToBitmap(iconDrawable);
+                                if (newIcon != null) {
+                                    intent.removeExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE);
+                                    intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, newIcon);
+                                }
+                            }
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+            return intent;
+        }
+
+        private void handleUninstallShortcutIntent(Intent intent) {
+            Intent shortcut = intent.getParcelableExtra(Intent.EXTRA_SHORTCUT_INTENT);
+            if (shortcut != null) {
+                ComponentName componentName = shortcut.resolveActivity(getPM());
+                if (componentName != null) {
+                    Intent newShortcutIntent = new Intent();
+                    newShortcutIntent.putExtra("_VA_|_uri_", shortcut.toUri(0));
+                    newShortcutIntent.setClassName(getHostPkg(), Constants.SHORTCUT_PROXY_ACTIVITY_NAME);
+                    newShortcutIntent.removeExtra(Intent.EXTRA_SHORTCUT_INTENT);
+                    intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, newShortcutIntent);
+                }
+            }
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
+
+    static class GetIntentSender extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "getIntentSender";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String creator = (String) args[1];
+            String[] resolvedTypes = (String[]) args[6];
+            int type = (int) args[0];
+            int flags = (int) args[7];
+            if (args[5] instanceof Intent[]) {
+                Intent[] intents = (Intent[]) args[5];
+                for (int i = 0; i < intents.length; i++) {
+                    Intent intent = intents[i];
+                    if (resolvedTypes != null && i < resolvedTypes.length) {
+                        intent.setDataAndType(intent.getData(), resolvedTypes[i]);
+                    }
+                    Intent targetIntent = redirectIntentSender(type, creator, intent);
+                    if (targetIntent != null) {
+                        intents[i] = targetIntent;
+                    }
+                }
+            }
+            args[7] = flags;
+            args[1] = getHostPkg();
+            // Force userId to 0
+            if (args[args.length - 1] instanceof Integer) {
+                args[args.length - 1] = 0;
+            }
+            IInterface sender = (IInterface) method.invoke(who, args);
+            if (sender != null && creator != null) {
+                VActivityManager.get().addPendingIntent(sender.asBinder(), creator);
+            }
+            return sender;
+        }
+
+        private Intent redirectIntentSender(int type, String creator, Intent intent) {
+            Intent newIntent = intent.cloneFilter();
+            switch (type) {
+                case ActivityManagerCompat.INTENT_SENDER_ACTIVITY: {
+                    ComponentInfo info = VirtualCore.get().resolveActivityInfo(intent, VUserHandle.myUserId());
+                    if (info != null) {
+                        newIntent.setClass(getHostContext(), StubPendingActivity.class);
+                        newIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    }
+                }
+                break;
+                case ActivityManagerCompat.INTENT_SENDER_SERVICE: {
+                    ComponentInfo info = VirtualCore.get().resolveServiceInfo(intent, VUserHandle.myUserId());
+                    if (info != null) {
+                        newIntent.setClass(getHostContext(), StubPendingService.class);
+                    }
+                }
+                break;
+                case ActivityManagerCompat.INTENT_SENDER_BROADCAST: {
+                    newIntent.setClass(getHostContext(), StubPendingReceiver.class);
+                }
+                break;
+                default:
+                    return null;
+            }
+            newIntent.putExtra("_VA_|_user_id_", VUserHandle.myUserId());
+            newIntent.putExtra("_VA_|_intent_", intent);
+            newIntent.putExtra("_VA_|_creator_", creator);
+            newIntent.putExtra("_VA_|_from_inner_", true);
+            return newIntent;
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+
+    }
+
+    protected static boolean isAppProcess() {
+        return VirtualCore.get().isVAppProcess();
+    }
+
+    protected static PackageManager getPM() {
+        return VirtualCore.getPM();
     }
 }
