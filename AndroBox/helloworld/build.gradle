@@ -26,6 +26,22 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    android.applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "helloworld.apk"
+        }
+
+        // 打包完成后做的一些事,复制apk到指定文件夹
+        variant.assemble.doLast {
+            copy {
+                variant.outputs.forEach { file ->
+                    ant.move file: file.outputFile,
+                            todir: "${project.rootDir}/app/src/main/assets"
+                }
+            }
+        }
+    }
+
 }
 
 dependencies {
