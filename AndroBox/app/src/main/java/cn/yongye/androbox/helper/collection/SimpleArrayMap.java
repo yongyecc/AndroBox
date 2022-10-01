@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lody.virtual.helper.collection;
+package cn.yongye.androbox.helper.collection;
 
 import android.util.Log;
 

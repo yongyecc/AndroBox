@@ -1,4 +1,4 @@
-package com.lody.virtual.client.stub;
+package cn.yongye.androbox.client.stub;
 
 /**
  * @author Lody

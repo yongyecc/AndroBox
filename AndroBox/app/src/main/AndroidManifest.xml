@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="cn.yongye.androbox">
 
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
     <application
         android:name=".MyApp"
         android:allowBackup="true"
@@ -26,7 +27,49 @@
 
         <provider
             android:authorities="virtual.service.BinderProvider"
-            android:name=".virtual.service.BinderProvider"/>
+            android:name=".virtual.server.BinderProvider"/>
+
+        <activity
+            android:name=".client.stub.StubActivity$C0"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name=".client.stub.StubActivity$C1"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name=".client.stub.StubActivity$C2"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name=".client.stub.StubActivity$C3"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme" />
+
+        <provider
+            android:name=".client.stub.StubContentProvider$C0"
+            android:authorities="virtual_stub_0"
+            android:exported="false"
+             />
+
+        <provider
+            android:name=".client.stub.StubContentProvider$C1"
+            android:authorities="virtual_stub_1"
+            android:exported="false"
+            />
+
+        <provider
+            android:name=".client.stub.StubContentProvider$C2"
+            android:authorities="virtual_stub_2"
+            android:exported="false"
+            />
     </application>
 
 </manifest>

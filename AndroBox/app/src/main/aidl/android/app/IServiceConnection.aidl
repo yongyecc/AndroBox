@@ -1,13 +1,8 @@
-// IServiceConnection.aidl
 package android.app;
 
-// Declare any non-default types here with import statements
+import android.content.ComponentName;
 
+/** @hide */
 interface IServiceConnection {
-    /**
-     * Demonstrates some basic types that you can use as parameters
-     * and return values in AIDL.
-     */
-    void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat,
-            double aDouble, String aString);
+    void connected(in ComponentName name, IBinder service);
 }

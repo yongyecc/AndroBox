@@ -1,5 +1,6 @@
 package cn.yongye.androbox.client.hook.base;
 
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 
@@ -27,9 +28,9 @@ public abstract class MethodProxy {
 //        return VClientImpl.get().getCurrentPackage();
 //    }
 //
-//    protected static Context getHostContext() {
-//        return VirtualCore.get().getContext();
-//    }
+    protected static Context getHostContext() {
+        return VirtualCore.get().getContext();
+    }
 
 //    protected static boolean isAppProcess() {
 //        return VirtualCore.get().isVAppProcess();

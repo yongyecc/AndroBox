@@ -3,7 +3,7 @@ package cn.yongye.androbox.helper.utils;
 import android.content.pm.ComponentInfo;
 import android.text.TextUtils;
 
-import cn.yongye.androbox.virtual.service.pm.PackageSetting;
+import cn.yongye.androbox.virtual.server.pm.PackageSetting;
 
 public class ComponentFixer {
 

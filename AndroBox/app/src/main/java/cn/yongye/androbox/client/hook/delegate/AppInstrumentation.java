@@ -135,7 +135,6 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
     @Override
     public void callApplicationOnCreate(Application app) {
         super.callApplicationOnCreate(app);
-        new Throwable().printStackTrace();
     }
 
 }

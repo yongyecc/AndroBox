@@ -1,4 +1,4 @@
-package cn.yongye.androbox.virtual.service;
+package cn.yongye.androbox.virtual.server;
 
 
 import android.os.IBinder;

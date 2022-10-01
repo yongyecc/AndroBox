@@ -2,10 +2,17 @@ package cn.yongye.androbox;
 
 import android.app.Application;
 import android.app.Instrumentation;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.content.pm.ServiceInfo;
+import android.content.res.AssetManager;
+import android.content.res.Resources;
+import android.os.ConditionVariable;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
@@ -15,13 +22,20 @@ import java.util.List;
 import java.util.Map;
 
 import cn.yongye.androbox.client.core.InvocationStubManager;
+import cn.yongye.androbox.client.env.Constants;
+import cn.yongye.androbox.client.env.VirtualRuntime;
 import cn.yongye.androbox.client.hook.delegate.AppInstrumentation;
 import cn.yongye.androbox.client.ipc.ServiceManagerNative;
+import cn.yongye.androbox.client.ipc.VActivityManager;
+import cn.yongye.androbox.client.ipc.VPackageManager;
 import cn.yongye.androbox.helper.ipcbus.IPCBus;
+import cn.yongye.androbox.helper.ipcbus.IPCSingleton;
 import cn.yongye.androbox.helper.ipcbus.IServerCache;
-import cn.yongye.androbox.pm.LoadedApk;
 import cn.yongye.androbox.reflect.RefInvoke;
-import cn.yongye.androbox.virtual.service.ServiceCache;
+import cn.yongye.androbox.virtual.server.ServiceCache;
+import cn.yongye.androbox.virtual.server.interfaces.IAppManager;
+import cn.yongye.androbox.virtual.server.interfaces.IAppRequestListener;
+import cn.yongye.androbox.virtual.server.pm.InstalledAppInfo;
 import mirror.android.app.ActivityThread;
 
 public class VirtualCore {
@@ -37,7 +51,10 @@ public class VirtualCore {
     private Object mainThread;
     private static VirtualCore gCore = new VirtualCore();
     private final int myUid = Process.myUid();
+    private ProcessType processType;
     private boolean isStartUp;
+    private ConditionVariable initLock = new ConditionVariable();
+    private IPCSingleton<IAppManager> singleton = new IPCSingleton<>(IAppManager.class);
 
     /**
      * Client Package Manager
@@ -47,9 +64,78 @@ public class VirtualCore {
      * Host package name
      */
     private String hostPkgName;
-
+    private String processName;
+    /**
+     * Main ProcessName
+     */
+    private String mainProcessName;
+    private int systemPid;
     public static VirtualCore get() {
         return gCore;
+    }
+
+    public IAppRequestListener getAppRequestListener() {
+        try {
+            return getService().getAppRequestListener();
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    /**
+     * Process type
+     */
+    private enum ProcessType {
+        /**
+         * Server process
+         */
+        Server,
+        /**
+         * Virtual app process
+         */
+        VAppClient,
+        /**
+         * Main process
+         */
+        Main,
+        /**
+         * Child process
+         */
+        CHILD
+    }
+
+    /**
+     * @return If the current process is used to VA.
+     */
+    public boolean isVAppProcess() {
+        return ProcessType.VAppClient == processType;
+    }
+
+    public ConditionVariable getInitLock() {
+        return initLock;
+    }
+
+    private IAppManager getService() {
+        return singleton.get();
+    }
+
+    public Resources getResources(String pkg) throws Resources.NotFoundException {
+        InstalledAppInfo installedAppInfo = getInstalledAppInfo(pkg, 0);
+        if (installedAppInfo != null) {
+            AssetManager assets = mirror.android.content.res.AssetManager.ctor.newInstance();
+            mirror.android.content.res.AssetManager.addAssetPath.call(assets, installedAppInfo.apkPath);
+            Resources hostRes = context.getResources();
+            return new Resources(assets, hostRes.getDisplayMetrics(), hostRes.getConfiguration());
+        }
+        throw new Resources.NotFoundException(pkg);
+    }
+
+    public InstalledAppInfo getInstalledAppInfo(String pkg, int flags) {
+        try {
+            return getService().getInstalledAppInfo(pkg, flags);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
     }
 
     public String getHostPkg() {
@@ -99,22 +185,22 @@ public class VirtualCore {
     private void detectProcessType() {
         // Host package name
         hostPkgName = context.getApplicationInfo().packageName;
-//        // Main process name
-//        mainProcessName = context.getApplicationInfo().processName;
-//        // Current process name
-//        processName = ActivityThread.getProcessName.call(mainThread);
-//        if (processName.equals(mainProcessName)) {
-//            processType = ProcessType.Main;
-//        } else if (processName.endsWith(Constants.SERVER_PROCESS_NAME)) {
-//            processType = ProcessType.Server;
-//        } else if (VActivityManager.get().isAppProcess(processName)) {
-//            processType = ProcessType.VAppClient;
-//        } else {
-//            processType = ProcessType.CHILD;
-//        }
-//        if (isVAppProcess()) {
+        // Main process name
+        mainProcessName = context.getApplicationInfo().processName;
+        // Current process name
+        processName = ActivityThread.getProcessName.call(mainThread);
+        if (processName.equals(mainProcessName)) {
+            processType = ProcessType.Main;
+        } else if (processName.endsWith(Constants.SERVER_PROCESS_NAME)) {
+            processType = ProcessType.Server;
+        } else if (VActivityManager.get().isAppProcess(processName)) {
+            processType = ProcessType.VAppClient;
+        } else {
+            processType = ProcessType.CHILD;
+        }
+        if (isVAppProcess()) {
 //            systemPid = VActivityManager.get().getSystemPid();
-//        }
+        }
     }
 
     public PackageManager getUnHookPackageManager() {
@@ -126,48 +212,38 @@ public class VirtualCore {
         return hostPkgInfo.gids;
     }
 
-    public void makeVApplication(Object loadedApk){
-        String stActivityThread = "android.app.ActivityThread";
-        String stClassLoadedApk = "android.app.LoadedApk";
-        Object obCurrentActivityThread = RefInvoke.invokeStaticMethod(stActivityThread,
-                "currentActivityThread", new Class[]{}, new Object[]{});
-        //AppBindData objection
-        Object mBoundApplication = RefInvoke.getFieldObject(stActivityThread, obCurrentActivityThread, "mBoundApplication");
-        //LoadedApk object
-        Object loadedApkInfo = loadedApk;
-//        Object loadedApkInfo = RefInvoke.getFieldObject(stActivityThread +"$AppBindData", mBoundApplication, "info");
-        //LoadedApk.Application = null
-//        RefInvoke.setFieldObject(stClassLoadedApk, "mApplication", loadedApkInfo, null);
-        //ActivityThread.Applition
-        Object mInitApplication = RefInvoke.getFieldObject(stActivityThread, obCurrentActivityThread, "mInitialApplication");
-        //ActivityThread.Applitions
-        List<Application> mAllApplications = (List<Application>) RefInvoke.getFieldObject(stActivityThread, obCurrentActivityThread, "mAllApplications");
-        mAllApplications.remove(mInitApplication);
-        //LoadedApk.ApplicationInfo.classname=
-//        ((ApplicationInfo) RefInvoke.getFieldObject(stClassLoadedApk, loadedApkInfo, "mApplicationInfo")).className = "";
-        //make packageInfo for apk
-
-
-        //call LoadedApk.makeApplication, make Applicaiton object
-        //dynamic proxy PackageManager, genarate packageInfo
-        Application application = (Application) RefInvoke.invokeMethod(stClassLoadedApk,
-                "makeApplication", loadedApkInfo, new Class[]{boolean.class, Instrumentation.class}, new Object[]{false, null});
-        //ActivityThread.Applition = LoadedApk.Applicaiton
-        RefInvoke.setFieldObject(stActivityThread, "mInitialApplication", obCurrentActivityThread,
-                application);
-        Map<?,?> mProviderMap = (Map<?,?>) RefInvoke.getFieldObject(stActivityThread, obCurrentActivityThread,
-                "mProviderMap");
-        for (Map.Entry<?, ?> entry : mProviderMap.entrySet()) {
-            Object providerClientRecord = entry.getValue();
-            Object mLocalProvider = RefInvoke.getFieldObject(stActivityThread+"$ProviderClientRecord", providerClientRecord, "mLocalProvider");
-            RefInvoke.setFieldObject("android.content.ContentProvider", "mContext", mLocalProvider, application);
+    public ServiceInfo resolveServiceInfo(Intent intent, int userId) {
+        ServiceInfo serviceInfo = null;
+        ResolveInfo resolveInfo = VPackageManager.get().resolveService(intent, intent.getType(), 0, userId);
+        if (resolveInfo != null) {
+            serviceInfo = resolveInfo.serviceInfo;
         }
-        Instrumentation mInstrumentation = AppInstrumentation.getDefault();
-        mInstrumentation.callApplicationOnCreate(application);
-        application.onCreate();
-        Log.d(TAG, "makeVApplication end.");
+        return serviceInfo;
     }
 
 
+    public synchronized ActivityInfo resolveActivityInfo(Intent intent, int userId) {
+        ActivityInfo activityInfo = null;
+        if (intent.getComponent() == null) {
+            ResolveInfo resolveInfo = VPackageManager.get().resolveIntent(intent, intent.getType(), 0, userId);
+            if (resolveInfo != null && resolveInfo.activityInfo != null) {
+                activityInfo = resolveInfo.activityInfo;
+                intent.setClassName(activityInfo.packageName, activityInfo.name);
+            }
+        } else {
+            activityInfo = resolveActivityInfo(intent.getComponent(), userId);
+        }
+        if (activityInfo != null) {
+            if (activityInfo.targetActivity != null) {
+                ComponentName componentName = new ComponentName(activityInfo.packageName, activityInfo.targetActivity);
+                activityInfo = VPackageManager.get().getActivityInfo(componentName, 0, userId);
+                intent.setComponent(componentName);
+            }
+        }
+        return activityInfo;
+    }
 
+    public ActivityInfo resolveActivityInfo(ComponentName componentName, int userId) {
+        return VPackageManager.get().getActivityInfo(componentName, 0, userId);
+    }
 }

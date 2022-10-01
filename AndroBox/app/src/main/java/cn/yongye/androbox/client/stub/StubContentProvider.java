@@ -1,4 +1,4 @@
-package com.lody.virtual.client.stub;
+package cn.yongye.androbox.client.stub;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -9,9 +9,10 @@ import android.os.ConditionVariable;
 import android.os.IBinder;
 import android.os.Process;
 
-import com.lody.virtual.client.VClientImpl;
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.compat.BundleCompat;
+import cn.yongye.androbox.VirtualCore;
+import cn.yongye.androbox.client.VClientImpl;
+import cn.yongye.androbox.helper.compat.BundleCompat;
+
 
 /**
  * @author Lody
@@ -35,7 +36,7 @@ public class StubContentProvider extends ContentProvider {
 	private Bundle initProcess(Bundle extras) {
 		ConditionVariable lock = VirtualCore.get().getInitLock();
 		if (lock != null) {
-			lock.block();
+//			lock.block();
 		}
 		IBinder token = BundleCompat.getBinder(extras,"_VA_|_binder_");
 		int vuid = extras.getInt("_VA_|_vuid_");

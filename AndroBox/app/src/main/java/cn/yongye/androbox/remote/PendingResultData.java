@@ -11,16 +11,16 @@ import android.os.Parcelable;
  * @author Lody
  */
 
-public class PendingResultData1 implements Parcelable {
-    public static final Creator<PendingResultData1> CREATOR = new Creator<PendingResultData1>() {
+public class PendingResultData implements Parcelable {
+    public static final Creator<PendingResultData> CREATOR = new Creator<PendingResultData>() {
         @Override
-        public PendingResultData1 createFromParcel(Parcel source) {
-            return new PendingResultData1(source);
+        public PendingResultData createFromParcel(Parcel source) {
+            return new PendingResultData(source);
         }
 
         @Override
-        public PendingResultData1[] newArray(int size) {
-            return new PendingResultData1[size];
+        public PendingResultData[] newArray(int size) {
+            return new PendingResultData[size];
         }
     };
     public int mType;
@@ -35,7 +35,7 @@ public class PendingResultData1 implements Parcelable {
     public boolean mAbortBroadcast;
     public boolean mFinished;
 
-    public PendingResultData1(BroadcastReceiver.PendingResult result) {
+    public PendingResultData(BroadcastReceiver.PendingResult result) {
         if (mirror.android.content.BroadcastReceiver.PendingResultMNC.ctor != null) {
             mType = mirror.android.content.BroadcastReceiver.PendingResultMNC.mType.get(result);
             mOrderedHint = mirror.android.content.BroadcastReceiver.PendingResultMNC.mOrderedHint.get(result);
@@ -73,7 +73,7 @@ public class PendingResultData1 implements Parcelable {
     }
 
 
-    protected PendingResultData1(Parcel in) {
+    protected PendingResultData(Parcel in) {
         this.mType = in.readInt();
         this.mOrderedHint = in.readByte() != 0;
         this.mInitialStickyHint = in.readByte() != 0;

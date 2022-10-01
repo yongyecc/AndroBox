@@ -5,13 +5,13 @@ import android.content.Context;
 
 import java.io.File;
 
+import cn.yongye.androbox.client.VClientImpl;
+import cn.yongye.androbox.client.env.VirtualRuntime;
 import cn.yongye.androbox.pm.LoadedApk;
-import cn.yongye.androbox.pm.parser.PackageParserEx;
 import cn.yongye.androbox.pm.parser.VPackage;
-import cn.yongye.androbox.virtual.service.pm.PackageCacheManager;
-import cn.yongye.androbox.virtual.service.pm.VAppManagerService;
+import cn.yongye.androbox.virtual.server.pm.PackageCacheManager;
+import cn.yongye.androbox.virtual.server.pm.VAppManagerService;
 import me.weishu.reflection.Reflection;
-import mirror.android.content.pm.PackageParser;
 
 public class MyApp extends Application {
 
@@ -56,7 +56,7 @@ public class MyApp extends Application {
             //1. apk to LoadedApk objection
             Object loadedApk = LoadedApk.getInstance(mApp).makeLoadedApk();
             //2. make virtual application
-            VirtualCore.get().makeVApplication(loadedApk);
+//            VClientImpl.get().makeVApplication(mApp, loadedApk);
         } catch (Exception e) {
             e.printStackTrace();
         } catch (Throwable throwable) {

@@ -49,17 +49,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="marquee"
-            android:maxLines="1"
-            android:minLines="1"/>
+            android:minLines="1"
+            android:singleLine="true" />
         <!-- Extended activity info to distinguish between duplicate activity names -->
         <TextView
             android:id="@+id/text2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="marquee"
-            android:maxLines="1"
             android:minLines="1"
-            android:textAppearance="?android:attr/textAppearanceSmall"/>
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:singleLine="true" />
     </LinearLayout>
 </LinearLayout>
 

@@ -30,8 +30,8 @@ import cn.yongye.androbox.VirtualCore;
 import cn.yongye.androbox.helper.utils.ComponentFixer;
 import cn.yongye.androbox.helper.utils.VLog;
 import cn.yongye.androbox.os.VEnvironment;
-import cn.yongye.androbox.virtual.service.pm.PackageSetting;
-import cn.yongye.androbox.virtual.service.pm.PackageUserState;
+import cn.yongye.androbox.virtual.server.pm.PackageSetting;
+import cn.yongye.androbox.virtual.server.pm.PackageUserState;
 import mirror.android.content.pm.ApplicationInfoL;
 import mirror.android.content.pm.ApplicationInfoN;
 
@@ -105,6 +105,29 @@ public class PackageParserEx {
         cache.reqFeatures = p.reqFeatures;
         addOwner(cache);
         return cache;
+    }
+
+    public static VPackage readPackageCache(String packageName) {
+        Parcel p = Parcel.obtain();
+        try {
+            File cacheFile = VEnvironment.getPackageCacheFile(packageName);
+            FileInputStream is = new FileInputStream(cacheFile);
+            byte[] bytes = FileUtils.toByteArray(is);
+            is.close();
+            p.unmarshall(bytes, 0, bytes.length);
+            p.setDataPosition(0);
+            if (p.readInt() != 4) {
+                throw new IllegalStateException("Invalid version.");
+            }
+            VPackage pkg = new VPackage(p);
+            addOwner(pkg);
+            return pkg;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            p.recycle();
+        }
+        return null;
     }
 
     private static void addOwner(VPackage p) {

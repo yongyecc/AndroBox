@@ -9,8 +9,7 @@ import androidx.core.app.BundleCompat;
 
 import cn.yongye.androbox.VirtualCore;
 import cn.yongye.androbox.helper.utils.VLog;
-import cn.yongye.androbox.virtual.service.IServiceFetcher;
-import cn.yongye.androbox.virtual.service.ServiceCache;
+import cn.yongye.androbox.virtual.server.IServiceFetcher;
 
 public class ServiceManagerNative {
 

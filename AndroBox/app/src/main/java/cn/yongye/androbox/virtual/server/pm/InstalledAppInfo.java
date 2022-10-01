@@ -1,4 +1,4 @@
-package cn.yongye.androbox.virtual.service.pm;
+package cn.yongye.androbox.virtual.server.pm;
 
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -7,7 +7,6 @@ import android.os.Parcelable;
 
 import java.io.File;
 
-import cn.yongye.androbox.VirtualCore;
 import cn.yongye.androbox.os.VEnvironment;
 
 public final class InstalledAppInfo implements Parcelable {

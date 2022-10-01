@@ -1,4 +1,4 @@
-package cn.yongye.androbox.virtual.service.pm;
+package cn.yongye.androbox.virtual.server.pm;
 
 import android.util.ArrayMap;
 
@@ -20,7 +20,7 @@ public class PackageCacheManager {
             PackageParserEx.initApplicationInfoBase(ps, pkg);
             PACKAGE_CACHE.put(pkg.packageName, pkg);
             pkg.mExtras = ps;
-//            VPackageManagerService.get().analyzePackageLocked(pkg);
+            VPackageManagerService.get().analyzePackageLocked(pkg);
         }
     }
 

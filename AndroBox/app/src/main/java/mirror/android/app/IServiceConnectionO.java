@@ -1,2 +1,4 @@
-package mirror.android.app;public class IServiceConnectionO {
+package mirror.android.app;
+
+public class IServiceConnectionO {
 }

@@ -1,4 +1,4 @@
-package cn.yongye.androbox.virtual.service.pm;
+package cn.yongye.androbox.virtual.server.pm;
 
 import android.os.Parcel;
 import android.os.Parcelable;

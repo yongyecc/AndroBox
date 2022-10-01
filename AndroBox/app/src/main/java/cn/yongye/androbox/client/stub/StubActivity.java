@@ -1,17 +1,18 @@
-package com.lody.virtual.client.stub;
+package cn.yongye.androbox.client.stub;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 
-import com.lody.virtual.client.VClientImpl;
-import com.lody.virtual.client.core.InvocationStubManager;
-import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
-import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.remote.StubActivityRecord;
+
+import cn.yongye.androbox.client.VClientImpl;
+import cn.yongye.androbox.client.core.InvocationStubManager;
+import cn.yongye.androbox.client.env.VirtualRuntime;
+import cn.yongye.androbox.client.hook.proxies.am.HCallbackStub;
+import cn.yongye.androbox.client.ipc.VActivityManager;
+import cn.yongye.androbox.os.VUserHandle;
+import cn.yongye.androbox.remote.StubActivityRecord;
 
 /**
  * @author Lody
@@ -29,7 +30,8 @@ public abstract class StubActivity extends Activity {
         // Try to acquire the actually component information.
 		StubActivityRecord r = new StubActivityRecord(stubIntent);
 		if (r.intent != null) {
-			if (TextUtils.equals(r.info.processName, VirtualRuntime.getProcessName()) && r.userId == VUserHandle.myUserId()) {
+//			if (TextUtils.equals(r.info.processName, VirtualRuntime.getProcessName()) && r.userId == VUserHandle.myUserId()) {
+			if (r.userId == VUserHandle.myUserId()) {
                 // Retry to inject the HCallback to instead of the exist one.
 				InvocationStubManager.getInstance().checkEnv(HCallbackStub.class);
 				Intent intent = r.intent;

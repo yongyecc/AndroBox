@@ -99,4 +99,11 @@ public class ActivityThread {
         public static RefStaticInt CREATE_SERVICE;
         public static RefStaticInt SCHEDULE_CRASH;
     }
+
+    public static class HP {
+        public static Class<?> TYPE = RefClass.load(HP.class, "android.app.ActivityThread$H");
+        public static RefStaticInt EXECUTE_TRANSACTION;
+        public static RefStaticInt CREATE_SERVICE;
+        public static RefStaticInt SCHEDULE_CRASH;
+    }
 }

@@ -1,4 +1,4 @@
-package cn.yongye.androbox.virtual.service;
+package cn.yongye.androbox.virtual.server;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -15,8 +15,10 @@ import androidx.core.app.BundleCompat;
 
 import cn.yongye.androbox.VirtualCore;
 import cn.yongye.androbox.helper.ipcbus.IPCBus;
-import cn.yongye.androbox.virtual.service.interfaces.IPackageManager;
-import cn.yongye.androbox.virtual.service.pm.VPackageManagerService;
+import cn.yongye.androbox.virtual.server.am.VActivityManagerService;
+import cn.yongye.androbox.virtual.server.interfaces.IActivityManager;
+import cn.yongye.androbox.virtual.server.interfaces.IPackageManager;
+import cn.yongye.androbox.virtual.server.pm.VPackageManagerService;
 
 public final class BinderProvider extends ContentProvider {
 

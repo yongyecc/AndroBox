@@ -55,7 +55,6 @@ public abstract class MethodInvocationProxy<T extends MethodInvocationStub> impl
                     addMethodProxy(innerClass);
                 }
             }
-
         }
     }
 

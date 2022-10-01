@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import cn.yongye.androbox.client.hook.delegate.AppInstrumentation;
+import cn.yongye.androbox.client.hook.proxies.am.ActivityManagerStub;
+import cn.yongye.androbox.client.hook.proxies.am.HCallbackStub;
 import cn.yongye.androbox.client.hook.proxies.pm.PackageManagerStub;
 import cn.yongye.androbox.interfaces.IInjector;
 
@@ -29,6 +31,22 @@ public final class InvocationStubManager {
         addInjector(AppInstrumentation.getDefault());
     }
 
+    public <T extends IInjector> void checkEnv(Class<T> clazz) {
+        IInjector IInjector = findInjector(clazz);
+        if (IInjector != null && IInjector.isEnvBad()) {
+            try {
+                IInjector.inject();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public <T extends IInjector> T findInjector(Class<T> clazz) {
+        // noinspection unchecked
+        return (T) mInjectors.get(clazz);
+    }
+
     /**
      * @return if the InvocationStubManager has been initialized.
      */
@@ -48,6 +66,9 @@ public final class InvocationStubManager {
     private void injectInternal() throws Throwable {
         //create and save proxy object for system service
         addInjector(new PackageManagerStub());
+        addInjector(new ActivityManagerStub());
+        addInjector(HCallbackStub.getDefault());
+
     }
 
 

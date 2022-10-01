@@ -1,5 +1,5 @@
 // IServiceFetcher.aidl
-package cn.yongye.androbox.virtual.service;
+package cn.yongye.androbox.virtual.server;
 
 // Declare any non-default types here with import statements
 
